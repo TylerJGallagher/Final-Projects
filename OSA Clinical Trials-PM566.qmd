@@ -1,0 +1,187 @@
+---
+title: "OSA Clinical Trials"
+author: "Tyler Gallagher"
+format:
+   html:
+     embed-resources: true
+editor: visual
+---
+
+# Introduction:
+
+Obstructive sleep apnea (OSA) is a highly prevalent condition in the United States that significantly affects the health and quality of life of many individuals. While the gold standard treatment for OSA has historically been continuous positive airway pressure (cPAP) devices, such devices are uncomfortable and often subject to reported poor compliance. Thus, many clinical trials are underway studying alternatives to cPAP. However, the efficacy of various treatment is likely to vary depending on the cohort studied.
+
+Therefore, we are interested in exploring the landscape of clinical trials for the treatment of OSA in the United States. The specific questions that we hope to answer include: 1) How have the number of new clinical trials in the United States changed over time? 2) What are the characteristics of the populations studied by these clinical trials? 3) What is being studied in these clinical trials, and by whom?
+
+# Methods:
+
+ClinicalTrials.gov was utilized to collect data on clinical trials for OSA treatment. To find clinical trials, the search term "Obstructive Sleep Apnea" was queried with filters "Not yet recruiting," "Recruiting," "Active, not recruiting" and "Completed" selected in the United States for studies beginning between January 1, 2013 and December 31, 2022. All data criteria available were selected for download. Before statistical analysis, additional screening was completed to ensure included studies were only randomized control trials for treatment of OSA. Descriptive statistical analysis was completed in R.
+
+# Preliminary Analysis and Results:
+
+Initial Data preparation:
+
+```{r}
+library(readxl)
+```
+
+```{r}
+file_path <- "/Users/TylerGallagher13/Desktop/Research/Jara Projects/OSA Clinical Trials/ctg-studies-01-Del.xlsx"
+osaclintrial <- read_excel(file_path)
+head(osaclintrial)
+```
+
+```{r}
+library(dplyr)
+library(stringr)
+osaclintrial <- osaclintrial %>%
+  mutate(Start_Year = as.integer(str_extract(`Start Date`, "\\d{4}")))
+```
+
+```{r}
+summary(osaclintrial$Start_Year)
+```
+
+## Question 1: How have the number of new clinical trials in the United States changed over time?
+
+```{r}
+library(ggplot2)
+summary_table <- osaclintrial %>%
+  group_by(Start_Year) %>%
+  summarise(Count = n())
+ggplot(summary_table, aes(x = Start_Year, y = Count)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = "Number of Clinical Trials Started Per Year",
+    x = "Start Year",
+    y = "Number of Clinical Trials"
+  ) +
+  scale_x_continuous(breaks = seq(min(summary_table$Start_Year), max(summary_table$Start_Year), by = 3), labels = scales::number_format(scale = 1)) +
+  scale_y_continuous(breaks = seq(min(summary_table$Count), max(summary_table$Count), by = 3), labels = scales::number_format(scale = 1))
+```
+
+```{r}
+start_year_counts <- table(osaclintrial$Start_Year)
+start_year_counts_df <- as.data.frame(start_year_counts)
+colnames(start_year_counts_df) <- c("Start_Year", "Count")
+summary_stats <- summary(start_year_counts_df$Count)
+print(summary_stats)
+```
+
+Number of randomized control trials started for the treatment of OSA has varied form 5 to 17 per year over the past 10 years (2013-2022). On average, about 12 new clinical trials were started annually. While the data has been variable on number per year, there is no clear increase or decrease of numbers of clinical trials started for treatment of OSA annually in the US.
+
+## Question 2: What are the characteristics of the populations studied by these clinical trials?
+
+```{r}
+table(osaclintrial$Age)
+```
+
+```{r}
+age_groups <- c(
+  "Adult only" = 4,
+  "Adults and Older Adults" = 108,
+  "Children only" = 5,
+  "Chlidren and Adults" = 2
+)
+pie(age_groups, labels = paste(names(age_groups), " (", age_groups, ")", sep = ""), main = "Age Groups")
+```
+
+```{r}
+table(osaclintrial$Sex)
+```
+
+```{r}
+gender_summary <- c(
+  "Both Sexes" = 117,
+  "Male" = 1,
+  "Female" = 1
+)
+pie(gender_summary, labels = paste(names(gender_summary), " (", gender_summary, ")", sep = ""), main = "Gender Distribution")
+```
+
+```{r}
+summary(osaclintrial$Enrollment)
+```
+
+Overall, it appears that most clinical trials (95.8%) are studying adults with OSA, while only 5.9% study pediatric OSA. Almost all clinical trials study both males and females, though one studies exclusively males or females, respectively. The average enrollment goal in each clinical trial is about 130, with the n ranging from 6 to 1,873.
+
+## Question 3: What treatments are being studied in these clinical trials, and by whom?
+
+```{r}
+code_to_label <- c("2" = "Medication",
+                   "4" = "Nerve Simulation device",
+                   "5" = "Other physical appliance",
+                   "6" = "PAP variant",
+                   "7" = "Other",
+                   "8" = "Physical therapy",
+                   "9" = "Behavioral intervention/Therapy")
+osaclintrial$Intervention_Type <- factor(osaclintrial$Intervention_Type, levels = names(code_to_label), labels = code_to_label)
+intervention_frequencies <- table(osaclintrial$Intervention_Type)
+print(intervention_frequencies)
+```
+
+```{r}
+intervention_frequencies <- c(
+  "Medication" = 47,
+  "Nerve Simulation device" = 2,
+  "Other physical appliance" = 11,
+  "PAP variant" = 22,
+  "Other" = 7,
+  "Physical therapy" = 6,
+  "Behavioral intervention/Therapy" = 23
+)
+pie(intervention_frequencies, labels = paste(names(intervention_frequencies), " (", intervention_frequencies, ")", sep = ""), main = "Intervention Types")
+```
+
+```{r}
+code_to_label2 <- c("1" = "Academic Organizations",
+                   "2" = "Industry",
+                   "3" = "VA",
+                   "4" = "Charitable Organization")
+osaclintrial$Sponsor_Type <- factor(osaclintrial$Sponsor_Type, levels = names(code_to_label2), labels = code_to_label2)
+intervention_frequencies <- table(osaclintrial$Sponsor_Type)
+print(intervention_frequencies)
+```
+
+```{r}
+sponsor_type_frequencies <- c(
+  "Academic Organizations" = 83,
+  "Industry" = 27,
+  "VA Office of Research and Development" = 8,
+  "Charitable Foundation/Organization" = 1
+)
+pie(sponsor_type_frequencies, labels = paste(names(sponsor_type_frequencies), " (", sponsor_type_frequencies, ")", sep = ""), main = "Sponsor Types")
+```
+
+```{r}
+percentage_by_region <- sapply(c("NE", "MW", "S", "W"), function(region) {
+  prop <- prop.table(table(osaclintrial[[region]]))
+  percent_1 <- prop[2] * 100
+  percent_0 <- prop[1] * 100
+  data.frame(Region = region, `% of 1` = percent_1, `% of 0` = percent_0)
+})
+result_table <- do.call(rbind, percentage_by_region)
+print(result_table)
+```
+
+```{r}
+if (!require(ggplot2)) {
+  install.packages("ggplot2")
+  library(ggplot2)
+}
+region_data <- data.frame(
+  Region = c("Northeast", "Midwest", "South", "West"),
+  Percentage = c(58.8, 69.7, 66.4, 59.7)
+)
+ggplot(region_data, aes(x = Region, y = Percentage)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  labs(title = "Percentage of Clinical Trials by US Census Region", y = "Percentage") +
+  theme_minimal()
+```
+
+Here, we learn that the primary intervention is medication, followed by a behavioral intervention/therapy. Most sponsors are academic institutions, followed by industry. Most clinical trials are occurring in the Midwest, with the least occurring in the Northeast.
+
+# Conclusions:
+
+This study provides a summary of randomized clinical trials for the treatment of OSA in the United States over the past 10 years (2013-2022). Over the time period, the average number of new clinical trials each year was approximately 12, and the numbers of new clinical trials started each year has been variable but demonstrated no increase or decrease over time. Most clinical trials are targeted for adults (\>95%) and all sexes (\>98%) with the most common intervention being medication (39.5%). Academic organizations were the most common funders of such projects (69.7%), with most being conducted at a site in the Midwest (69.7%) and least in the Northeast (58.8%). This study provides context on the current landscape of clinical trials for Obstructive Sleep Apnea in the United States.
