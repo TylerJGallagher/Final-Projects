@@ -42,6 +42,10 @@ osaclintrial <- osaclintrial %>%
 summary(osaclintrial$Start_Year)
 ```
 
+## EDA
+
+Exploratory data analysis demonstrated 119 observations and 48 variables (columns). Further analysis revealed no missing or unexpected values for any of the variables of interest.
+
 ## Question 1: How have the number of new clinical trials in the United States changed over time?
 
 ```{r}
